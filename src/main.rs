@@ -37,15 +37,11 @@ fn main() {
     let successors = |state: &State| {
         let mut vec = Vec::new();
 
-        if state.can_open_valve(&info, state.location) {
-            vec.push(state.step_and_open_valve_2(&info, state.location));
-        }
-
         // Go to connecting valves
         for i in 1..info.valves.len() {
             let i = i as u8;
             if state.can_move_to(&info, i) {
-                vec.push(state.step_and_move_2(&info, i));
+                vec.push(state.move_and_open(&info, i));
             }
         }
 
@@ -87,15 +83,15 @@ fn solution_2(state: State, info: &ValveInfo, memo: &mut HashMap<State, u16>) ->
 
     let mut result = state.pressure;
     // Open current valve
-    if state.can_open_valve(info, state.location) { 
-        result = result.max(solution_2(state.step_and_open_valve_2(info, state.location), info, memo));
-    }
+    // if state.can_open_valve(info, state.location) { 
+    //     result = result.max(solution_2(state.step_and_open_valve_2(info, state.location), info, memo));
+    // }
     
     // Go to connecting valves
     for i in 1..info.valves.len() {
         let i = i as u8;
         if state.can_move_to(info, i) {
-            result = result.max(solution_2(state.step_and_move_2(info, i), info, memo));
+            result = result.max(solution_2(state.move_and_open(info, i), info, memo));
         }
     }
 
