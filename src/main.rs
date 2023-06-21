@@ -17,17 +17,14 @@ fn main() {
     // Start timer
     let now = Instant::now();
     
-    let mut memo = HashMap::new();
     // Do part 1
-    let sol_1 = part_1(State::new(), &info, &mut memo);
+    let sol_1 = part_1(State::new(), &info);
     
     // End timer
     let elapsed = now.elapsed();
     
     println!("Part 1: {}", sol_1);
     println!("Elapsed Time: {:.2?}", elapsed);
-    
-    println!("States visited: {}", memo.len());
     
     // Not needed for solution but used for debugging
     // Get path from start to end state
@@ -53,11 +50,7 @@ fn main() {
     dbg!(path);
 }
 
-fn part_1(state: State, info: &ValveInfo, memo: &mut HashMap<State, u16>) -> u16 {
-    // already visited this state
-    if let Some(result) = memo.get(&state).copied() {
-        return result;
-    }
+fn part_1(state: State, info: &ValveInfo) -> u16 {
 
     let mut result = state.pressure;
     
@@ -65,12 +58,11 @@ fn part_1(state: State, info: &ValveInfo, memo: &mut HashMap<State, u16>) -> u16
     for i in 1..info.valves.len() {
         let i = i as u8;
         if state.can_move_to(info, i) {
-            result = result.max(part_1(state.move_and_open(info, i), info, memo));
+            result = result.max(part_1(state.move_and_open(info, i), info));
         }
     }
 
     // all possible connecting valves have been opened
-    memo.insert(state, result);
 
     result
 }
