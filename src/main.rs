@@ -1,26 +1,25 @@
-use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::io;
 use regex::Regex;
 use pathfinding::directed::bfs;
 
-fn main() {
-    // create info struct from file
-    let info = parse_file_to_info("day16.txt").unwrap();
-    dbg!(&info.valves);
-    println!("{:08b}", info.usable_valves);
-    // create optimized valve info struct from info struct
-    let info = create_valve_info(info);
+fn main() -> io::Result<()> {
+    let file_content = fs::read_to_string("day16.txt")?;
     
     use std::time::Instant;
     // Start timer
     let now = Instant::now();
     
+    // create info struct from file
+    let info = parse_file_to_info(file_content);
+    dbg!(&info);
+    // create optimized valve info struct from info struct
+    let info = create_valve_info(info);
+    
     // Do part 1
     let sol_1 = part_1(State::new(), &info);
     
-    // End timer
     let elapsed = now.elapsed();
     
     println!("Part 1: {}", sol_1);
@@ -28,26 +27,28 @@ fn main() {
     
     // Not needed for solution but used for debugging
     // Get path from start to end state
-    let path = bfs::bfs(
-        &State::new(),
-        |state: &State| {
-            let mut vec = Vec::new();
-
-            // Go to and open connecting valves
-            for i in 1..info.valves.len() {
-                let i = i as u8;
-                if state.can_move_to(&info, i) {
-                    vec.push(state.move_and_open(&info, i));
-                }
-            }
-
-            vec
-        },
-        |x| {  // Stop when hit pressure matching target
-            x.pressure == sol_1
-        }
-    );
-    dbg!(path);
+    // let path = bfs::bfs(
+    //     &State::new(),
+    //     |state: &State| {
+    //         let mut vec = Vec::new();
+    // 
+    //         // Go to and open connecting valves
+    //         for i in 1..info.valves.len() {
+    //             let i = i as u8;
+    //             if state.can_move_to(&info, i) {
+    //                 vec.push(state.move_and_open(&info, i));
+    //             }
+    //         }
+    // 
+    //         vec
+    //     },
+    //     |x| {  // Stop when hit pressure matching target
+    //         x.pressure == sol_1
+    //     }
+    // );
+    // dbg!(path);
+    
+    Ok(())
 }
 
 fn part_1(state: State, info: &ValveInfo) -> u16 {
@@ -68,11 +69,26 @@ fn part_1(state: State, info: &ValveInfo) -> u16 {
 }
 
 // Parses the file
-fn parse_file_to_info(file: &str) -> io::Result<Info> {
-    let file_content = fs::read_to_string(file)?;
+fn parse_file_to_info(file: String) -> Info {
+    let mut file_content = file;
+
+    // Code assumed the first line in the file was the starting point when it's actually Valve AA
+    // More work to rewrite the entire program so I just swap the lines
+    let mut aa_line_index = 0;
+    for (i, line) in file_content.lines().enumerate() {
+        if &line[..8] == "Valve AA" {
+            aa_line_index = i;
+            break;
+        }
+    }
+    file_content = swap_lines(&file_content, 0, aa_line_index);
+    
     // get rid of unneeded info in each line
     let lines: Vec<String> = file_content.lines().map(raw_line_to_inter).collect();
-    let mut file_content = lines.join("\n");
+    file_content = lines.join("\n");
+
+
+    println!("{}", file_content);
 
     // Find and replace valve id's with numbers
     for (i, line) in lines.iter().enumerate() {
@@ -88,12 +104,28 @@ fn parse_file_to_info(file: &str) -> io::Result<Info> {
         }
     }
 
-    Ok(Info {
+    Info {
         valves,
         usable_valves,
         limit: 30
-    })
+    }
 }
+
+fn swap_lines(string: &str, i: usize, n: usize) -> String {
+    let mut lines: Vec<&str> = string.lines().collect();
+
+    if i >= lines.len() || n >= lines.len() {
+        return String::from(string); // Return original string if line indices are out of bounds
+    }
+
+    let temp = lines[i];
+    lines[i] = lines[n];
+    lines[n] = temp;
+
+    lines.join("\n")
+}
+
+
 // Removes the surrounding stuff
 // "Valve FY has flow rate=17; tunnels lead to valves GG, KJ"
 // to "FY 17 GG KJ"
