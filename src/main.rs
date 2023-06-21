@@ -8,7 +8,8 @@ use pathfinding::directed::bfs;
 fn main() {
     // create info struct from file
     let info = parse_file_to_info("day16.txt").unwrap();
-    dbg!(&info);
+    dbg!(&info.valves);
+    println!("{:08b}", info.usable_valves);
     // create optimized valve info struct from info struct
     let info = create_valve_info(info);
     
@@ -77,16 +78,18 @@ fn part_1(state: State, info: &ValveInfo, memo: &mut HashMap<State, u16>) -> u16
 // Parses the file
 fn parse_file_to_info(file: &str) -> io::Result<Info> {
     let file_content = fs::read_to_string(file)?;
+    // get rid of unneeded info in each line
     let lines: Vec<String> = file_content.lines().map(raw_line_to_inter).collect();
     let mut file_content = lines.join("\n");
 
+    // Find and replace valve id's with numbers
     for (i, line) in lines.iter().enumerate() {
         file_content = file_content.replace(&line[..2], &i.to_string());
     }
 
     let valves: Vec<Valve> = file_content.split("\n").map(num_line_to_valve).collect();
     
-    let mut usable_valves: u128 = 0;
+    let mut usable_valves = 0;
     for (i, valve) in valves.iter().enumerate() {
         if valve.flow != 0 {
             usable_valves |= 1 << i;
