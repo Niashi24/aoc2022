@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::fs;
 use std::io;
@@ -7,7 +8,6 @@ fn main() -> io::Result<()> {
     
     use std::time::Instant;
     
-    // create info struct from file
     let now = Instant::now();
     // create optimized valve info struct from file content
     let mut info = parse::create_valve_info(file_content);
@@ -56,7 +56,7 @@ mod parse {
             (usable_valves >> x.valve_id) & 1 == 1  // with flow rate > 0
                 || x.valve_id == 0                  // start position
         });
-
+        // Unoptimized struct for each valve
         ValveInfo {
             valve_connections,
             valves,
@@ -200,9 +200,11 @@ mod parse {
 
 mod part_2 {
     use std::cmp::Ordering;
+    use std::collections::HashMap;
     use std::fmt::{Display, Formatter};
     use crate::ValveInfo;
 
+    #[derive(Clone, Eq, PartialEq, Hash)]
     pub struct State {
         p_location: u8,
         e_location: u8,
@@ -254,55 +256,42 @@ mod part_2 {
                 && self.time + info.get_move_cost(self.e_location, valve_id) + 1 < info.limit
         }
         
+        pub fn wait(&self) -> State {  // need to wait one minute when opening a valve
+            State {
+                time: self.time + 1,
+                p_timer: self.p_timer - 1,
+                e_timer: self.e_timer - 1,
+                ..*self
+            }
+        }
+        
         pub fn move_player(&self, info: &ValveInfo, valve_id: u8) -> State {
             let move_cost = info.get_move_cost(self.p_location, valve_id);
-            if move_cost > self.e_timer {  // elephants turn to move next
-                let elapsed_time = move_cost - self.e_timer;
-                return State {
-                    p_location: valve_id,
-                    e_location: self.e_location,
-                    time: self.time + elapsed_time + 1,
-                    pressure: self.pressure + info.get_total_pressure_at_time(self.time + move_cost, valve_id),
-                    open_valves: self.open_valves | (1 << valve_id),
-                    p_timer: move_cost - elapsed_time,
-                    e_timer: 0,
-                };
-            }
-            // player moves again!!
+            let elapsed_time = move_cost.min(self.e_timer);
+            
             State {
                 p_location: valve_id,
                 e_location: self.e_location,
-                time: self.time + move_cost + 1,
+                time: self.time + elapsed_time,
                 pressure: self.pressure + info.get_total_pressure_at_time(self.time + move_cost, valve_id),
                 open_valves: self.open_valves | (1 << valve_id),
-                p_timer: 0,
-                e_timer: self.e_timer - move_cost,
+                p_timer: move_cost - elapsed_time + 1,
+                e_timer: self.e_timer - elapsed_time,
             }
         }
         
         pub fn move_elephant(&self, info: &ValveInfo, valve_id: u8) -> State {
             let move_cost = info.get_move_cost(self.e_location, valve_id);
-            if move_cost > self.p_timer {  // player's turn to move next
-                let elapsed_time = move_cost - self.p_timer;
-                return State {
-                    p_location: self.p_location,
-                    e_location: valve_id,
-                    time: self.time + elapsed_time + 1,
-                    pressure: self.pressure + info.get_total_pressure_at_time(self.time + move_cost, valve_id),
-                    open_valves: self.open_valves | (1 << valve_id),
-                    p_timer: 0,
-                    e_timer: move_cost - elapsed_time,
-                }
-            }
-            // elephant moves again!!
+            let elapsed_time = move_cost.min(self.p_timer);
+            
             State {
                 p_location: self.p_location,
                 e_location: valve_id,
-                time: self.time + move_cost + 1,
+                time: self.time + elapsed_time,
                 pressure: self.pressure + info.get_total_pressure_at_time(self.time + move_cost, valve_id),
                 open_valves: self.open_valves | (1 << valve_id),
-                p_timer: self.p_timer - move_cost,
-                e_timer: 0,
+                p_timer: self.p_timer - elapsed_time,
+                e_timer: move_cost - elapsed_time + 1,
             }
         }
         
@@ -310,53 +299,26 @@ mod part_2 {
             let p_cost = info.get_move_cost(self.p_location, p_id);
             let e_cost = info.get_move_cost(self.e_location, e_id);
             
-            match &p_cost.cmp(&e_cost) {
-                Ordering::Greater => {  // elephant goes next
-                    let elapsed_time = p_cost - e_cost;
-                    
-                    State {
-                        p_location: p_id,
-                        e_location: e_id,
-                        time: self.time + elapsed_time + 1,
-                        pressure: self.pressure + 
-                            info.get_total_pressure_at_time(self.time + p_cost, p_id) +
-                            info.get_total_pressure_at_time(self.time + e_cost, e_id),
-                        open_valves: self.open_valves | (1 << p_id) | (1 << e_id),
-                        p_timer: p_cost - elapsed_time,
-                        e_timer: 0,
-                    }
-                },
-                Ordering::Less => {
-                    let elapsed_time = e_cost - p_cost;
-                    State {  // player's turn next
-                        p_location: p_id,
-                        e_location: e_id,
-                        time: self.time + elapsed_time + 1,
-                        pressure: self.pressure +
-                            info.get_total_pressure_at_time(self.time + p_cost, p_id) +
-                            info.get_total_pressure_at_time(self.time + e_cost, e_id),
-                        open_valves: self.open_valves | (1 << p_id) | (1 << e_id),
-                        p_timer: 0,
-                        e_timer: e_cost - elapsed_time,
-                    }
-                },
-                Ordering::Equal => State {  // both player and elephant turn next
-                    p_location: p_id,
-                    e_location: e_id,
-                    time: self.time + p_cost,
-                    pressure: self.pressure +
-                        info.get_total_pressure_at_time(self.time + p_cost, p_id) +
-                        info.get_total_pressure_at_time(self.time + e_cost, e_id),
-                    open_valves: self.open_valves | (1 << p_id) | (1 << e_id),
-                    p_timer: 0,
-                    e_timer: 0,
-                },
+            let elapsed_time = p_cost.min(e_cost);
+            
+            State {
+                p_location: p_id,
+                e_location: e_id,
+                time: self.time + elapsed_time,
+                pressure: self.pressure +
+                    info.get_total_pressure_at_time(self.time + p_cost, p_id) +
+                    info.get_total_pressure_at_time(self.time + e_cost, e_id),
+                open_valves: self.open_valves | (1 << p_id) | (1 << e_id),
+                p_timer: p_cost - elapsed_time + 1,
+                e_timer: e_cost - elapsed_time + 1,
             }
         }
     }
     
-    pub fn part_2(state: State, info: &ValveInfo) -> u16 {
-        println!("{}", state);
+    pub fn part_2(
+        state: State,
+        info: &ValveInfo
+    ) -> u16 {
         
         let mut result = state.pressure;
         
@@ -364,12 +326,12 @@ mod part_2 {
             (0, 0) => {
                 // Have both player and elephant move
                 let mut both_moved = false;
-                for i in 1..info.valves.len() {
+                for i in 1..info.valves.len() {  // player destinations
                     let i = i as u8;
                     if !state.player_can_move(info, i) {
                         continue;
                     }
-                    for j in 1..info.valves.len() {
+                    for j in 1..info.valves.len() {  // elephant destinations
                         let j = j as u8;
                         if !state.elephant_can_move(info, j) || i == j {
                             continue;
@@ -421,8 +383,17 @@ mod part_2 {
                     }
                 }
             },
+            // (1, 1) => {  // both currently opening valves
+            //     
+            // },
+            (1, _) => {
+                result = result.max(part_2(state.wait(), info));
+            },
+            (_, 1) => {
+                result = result.max(part_2(state.wait(), info));
+            }
             (_, _) => {
-                panic!("Should never have both not at 0");
+                panic!("Should never have both not at 0 or 1");
             }
         };
         
