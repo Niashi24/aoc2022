@@ -1,4 +1,5 @@
-﻿// use crate::day;
+﻿use std::collections::HashMap;
+// use crate::day;
 use crate::day::Day;
 
 pub struct Day16;
@@ -13,7 +14,9 @@ impl Day<ValveInfo> for Day16 {
     }
 
     fn part_2(&self, data: &ValveInfo) -> usize {
-        part_2::part_2(part_2::State::new(), data) as usize
+        // println!("{} valves", data.valves.len());
+        let mut best_with_valves = HashMap::new();
+        part_2::part_2(part_2::State::new(), data, &mut best_with_valves) as usize
     }
 }
 
@@ -176,6 +179,7 @@ mod parse {
 }
 
 mod part_2 {
+    use std::collections::HashMap;
     use crate::day16::ValveInfo;
 
     pub struct State {
@@ -183,7 +187,7 @@ mod part_2 {
         e_location: u8,
         time: u8,
         pressure: u16,
-        open_valves: u128,
+        open_valves: u16,
         p_timer: u8,
         e_timer: u8,
     }
@@ -279,8 +283,15 @@ mod part_2 {
 
     pub fn part_2(
         state: State,
-        info: &ValveInfo
+        info: &ValveInfo,
+        best_with_valves: &mut HashMap<u16, u16>
     ) -> u16 {
+        
+        if let Some(pressure) = best_with_valves.get(&state.pressure).copied() {
+            if state.pressure < pressure {
+                return state.pressure;
+            }
+        }
 
         let mut result = state.pressure;
 
@@ -300,7 +311,7 @@ mod part_2 {
                         }
 
                         both_moved = true;
-                        result = result.max(part_2(state.move_player_and_elephant(info, i, j), info));
+                        result = result.max(part_2(state.move_player_and_elephant(info, i, j), info, best_with_valves));
                     }
                 }
                 // what if player/elephant can't move but elephant/player can?
@@ -310,7 +321,7 @@ mod part_2 {
                         let i = i as u8;
 
                         if state.player_can_move(info, i) {
-                            result = result.max(part_2(state.move_player(info, i), info));
+                            result = result.max(part_2(state.move_player(info, i), info, best_with_valves));
                         }
                     }
 
@@ -319,7 +330,7 @@ mod part_2 {
                         let i = i as u8;
 
                         if state.elephant_can_move(info, i) {
-                            result = result.max(part_2(state.move_elephant(info, i), info));
+                            result = result.max(part_2(state.move_elephant(info, i), info, best_with_valves));
                         }
                     }
                 }
@@ -331,7 +342,7 @@ mod part_2 {
                     let i = i as u8;
 
                     if state.player_can_move(info, i) {
-                        result = result.max(part_2(state.move_player(info, i), info));
+                        result = result.max(part_2(state.move_player(info, i), info, best_with_valves));
                     }
                 }
             },
@@ -341,7 +352,7 @@ mod part_2 {
                     let i = i as u8;
 
                     if state.elephant_can_move(info, i) {
-                        result = result.max(part_2(state.move_elephant(info, i), info));
+                        result = result.max(part_2(state.move_elephant(info, i), info, best_with_valves));
                     }
                 }
             },
@@ -349,36 +360,36 @@ mod part_2 {
             //     
             // },
             (1, _) => {
-                result = result.max(part_2(state.wait(), info));
+                result = result.max(part_2(state.wait(), info, best_with_valves));
             },
             (_, 1) => {
-                result = result.max(part_2(state.wait(), info));
+                result = result.max(part_2(state.wait(), info, best_with_valves));
             }
             (_, _) => {
                 panic!("Should never have both not at 0 or 1");
             }
         };
+        
+        best_with_valves.entry(state.open_valves)
+            .and_modify(|v| {
+                if state.pressure > *v {
+                    *v = state.pressure;
+                }
+            })
+            .or_insert(state.pressure);
 
         result
     }
 }
 
 mod part_1 {
-    use std::fmt::Formatter;
     use crate::day16::ValveInfo;
-
-    #[derive(Clone, Eq, PartialEq, Hash)]
+    
     pub struct State {
         location: u8,       // current valve location
         time: u8,           // time of state
         pressure: u16,      // accumulated lifetime pressure of open valves
-        open_valves: u128,  // bit mask of open valves
-    }
-
-    impl std::fmt::Debug for State {
-        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-            write!(f, "{}mn - #{} - {:08b} - {}psi", self.time, self.location, self.open_valves, self.pressure)
-        }
+        open_valves: u16,  // bit mask of open valves (number of valves w/ flow > 0 + 1 <= 16)
     }
 
     impl State {
