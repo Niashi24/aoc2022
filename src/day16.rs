@@ -14,7 +14,6 @@ impl Day<ValveInfo> for Day16 {
     }
 
     fn part_2(&self, data: &ValveInfo) -> usize {
-        // println!("{} valves", data.valves.len());
         let mut best_with_valves = HashMap::new();
         part_2::part_2(part_2::State::new(), data, &mut best_with_valves) as usize
     }
@@ -139,41 +138,49 @@ mod parse {
     }
 
     fn create_graph(info: &Info) -> Vec<Vec<u8>> {
-        let mut graph: Vec<Vec<u8>> = Vec::new();
-        for i in 0..info.valves.len() {
-            let i = i as u8;
-            if i != 0 && !info.is_usable_valve(i) {
-                continue;
+        let num_valves = info.valves.len();
+        let mut adjacency_matrix = vec![vec![u8::MAX; num_valves]; num_valves];
+
+        // Initialize the adjacency matrix with direct connections
+        for (i, valve) in info.valves.iter().enumerate() {
+            for &connected_valve in &valve.connections {
+                adjacency_matrix[i][connected_valve as usize] = 1;
             }
-
-            let mut start_to_end = Vec::new();
-            for j in 0..info.valves.len() {
-                let j = j as u8;
-                if j != 0 && !info.is_usable_valve(j) {
-                    continue;
-                }
-                if i == j {
-                    start_to_end.push(0);
-                } else {
-                    start_to_end.push(bfs::bfs(
-                        &i,
-                        |x| {
-                            let mut neighbors = Vec::new();
-
-                            for valve in &info.valves.get(*x as usize).unwrap().connections {
-                                neighbors.push(valve.clone());
-                            }
-
-                            neighbors
-                        },
-                        |x| *x == j,
-                    ).unwrap().len() as u8 - 1);
-                }
-            }
-            graph.push(start_to_end);
         }
 
-        graph
+        // Apply Floyd-Warshall algorithm
+        for k in 0..num_valves {
+            for i in 0..num_valves {
+                for j in 0..num_valves {
+                    if adjacency_matrix[i][k] != u8::MAX && adjacency_matrix[k][j] != u8::MAX {
+                        let new_cost = adjacency_matrix[i][k].saturating_add(adjacency_matrix[k][j]);
+                        adjacency_matrix[i][j] = adjacency_matrix[i][j].min(new_cost);
+                    }
+                }
+            }
+        }
+
+        // Filter out valves with zero flow
+        let filtered_valves: Vec<usize> = info
+            .valves
+            .iter()
+            .enumerate()
+            .filter(|(_, valve)| valve.flow > 0 || valve.valve_id == 0)
+            .map(|(i, _)| i)
+            .collect();
+
+        // Create the final adjacency matrix with only relevant valves
+        let final_matrix: Vec<Vec<u8>> = filtered_valves
+            .iter()
+            .map(|&i| {
+                filtered_valves
+                    .iter()
+                    .map(|&j| adjacency_matrix[i][j])
+                    .collect()
+            })
+            .collect();
+
+        final_matrix
     }
 
 }
@@ -389,7 +396,7 @@ mod part_1 {
         location: u8,       // current valve location
         time: u8,           // time of state
         pressure: u16,      // accumulated lifetime pressure of open valves
-        open_valves: u16,  // bit mask of open valves (number of valves w/ flow > 0 + 1 <= 16)
+        open_valves: u16,  // bit mask of open valves (number of valves w/ flow > 0 + 1 always <= 16)
     }
 
     impl State {
