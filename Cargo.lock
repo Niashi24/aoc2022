@@ -15,6 +15,7 @@ dependencies = [
 name = "aoc2022"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "pathfinding",
  "regex",
 ]
@@ -55,6 +56,12 @@ checksum = "276ec31bcb4a9ee45f58bec6f9ec700ae4cf4f4f8f2fa7e06cb406bd5ffdd770"
 dependencies = [
  "num-traits",
 ]
+
+[[package]]
+name = "lazy_static"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "memchr"

@@ -21,7 +21,6 @@ impl Day<ValveInfo> for Day16 {
 
 
 mod parse {
-    use pathfinding::directed::bfs;
     use regex::Regex;
     use crate::day16::{Valve, ValveInfo};
 
@@ -50,13 +49,6 @@ mod parse {
         limit: u8
     }
 
-    impl Info {
-        #[inline]
-        fn is_usable_valve(&self, valve_id: u8) -> bool {
-            (self.usable_valves >> valve_id) & 1 == 1
-        }
-    }
-
     // Parses the file
     fn parse_file_to_info(file: String) -> Info {
         let mut file_content = file;
@@ -72,10 +64,12 @@ mod parse {
         }
         file_content = swap_lines(&file_content, 0, aa_line_index);
 
+
         // get rid of unneeded info in each line
         let lines: Vec<String> = file_content.lines().map(raw_line_to_inter).collect();
         file_content = lines.join("\n");
-
+        // println!("{:.2?}", now.elapsed());
+        
         // Find and replace valve id's with numbers
         for (i, line) in lines.iter().enumerate() {
             file_content = file_content.replace(&line[..2], &i.to_string());
@@ -115,17 +109,21 @@ mod parse {
     // "Valve FY has flow rate=17; tunnels lead to valves GG, KJ"
     // to "FY 17 GG KJ"
     fn raw_line_to_inter(str: &str) -> String {
-        let pattern = r"Valve (\w+) has flow rate=(\d+); tunnels? leads? to valves? (.+)";
-        let re = Regex::new(pattern).unwrap();
 
-        let captures = re.captures(str).unwrap();
+        lazy_static::lazy_static! {
+            static ref RE: regex::Regex =
+                regex::Regex::new(r"Valve (\w+) has flow rate=(\d+); tunnels? leads? to valves? (.+)").unwrap();
+        }
+
+        let captures = RE.captures(str).expect("Regex pattern didn't match");
 
         let valve = captures.get(1).unwrap().as_str();
         let flow = captures.get(2).unwrap().as_str();
-        let connections: String = captures.get(3).unwrap().as_str().split(", ").collect::<Vec<&str>>().join(" ");
+        let connections = captures.get(3).unwrap().as_str().replace(", ", " ");
 
         format!("{} {} {}", valve, flow, connections)
     }
+
     // Parses a num line to a Valve
     // "4 20 44 32" becomes a Valve with 20 flow and connections to valves 44 and 32
     fn num_line_to_valve(str: &str) -> Valve {
