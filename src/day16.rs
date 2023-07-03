@@ -21,7 +21,6 @@ impl Day<ValveInfo> for Day16 {
 
 
 mod parse {
-    use regex::Regex;
     use crate::day16::{Valve, ValveInfo};
 
     pub fn create_valve_info(file: String) -> ValveInfo {
@@ -361,27 +360,18 @@ mod part_2 {
                     }
                 }
             },
-            // (1, 1) => {  // both currently opening valves
-            //     
-            // },
-            (1, _) => {
-                result = result.max(part_2(state.wait(), info, best_with_valves));
-            },
-            (_, 1) => {
-                result = result.max(part_2(state.wait(), info, best_with_valves));
-            }
             (_, _) => {
-                panic!("Should never have both not at 0 or 1");
+                result = result.max(part_2(state.wait(), info, best_with_valves));
             }
         };
         
         best_with_valves.entry(state.open_valves)
             .and_modify(|v| {
-                if state.pressure > *v {
-                    *v = state.pressure;
+                if result > *v {
+                    *v = result;
                 }
             })
-            .or_insert(state.pressure);
+            .or_insert(result);
 
         result
     }
