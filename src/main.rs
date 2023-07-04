@@ -10,9 +10,9 @@ use crate::day::run_with_test;
 
 fn main() -> std::io::Result<()> {
     
-    // test_day16()?;
-    // test_day18()?;
+    test_day16()?;
     test_day17()?;
+    test_day18()?;
     
     Ok(())
 }
@@ -24,8 +24,8 @@ fn test_day16() -> std::io::Result<()> {
 
 fn test_day17() -> std::io::Result<()> {
     println!("Running Day 17:");
-    run_with_test(&Day17, "input/day17e.txt", (3068, 0), "input/day17.txt")
-}
+    run_with_test(&Day17, "input/day17e.txt", (3068, 1514285714288), "input/day17.txt")
+} // 1514285714288
 
 fn test_day18() -> std::io::Result<()> {
     println!("Running Day 18:");
