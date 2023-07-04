@@ -9,6 +9,7 @@ use crate::day::run_with_test;
 fn main() -> std::io::Result<()> {
     
     test_day16()?;
+    test_day18()?;
     
     Ok(())
 }

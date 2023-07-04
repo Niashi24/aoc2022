@@ -12,7 +12,7 @@ pub fn run_with_test<TData, TDay: Day<TData>>(day: &TDay, example_file: &str, ex
     println!("Testing with example dataset: ");
     let example_actual = run(day, example_file)?;
     if example_actual != example_expected {
-        println!("Error! Expected answer \"Part 1: {}, Part 2: {}\", but got \"Part 1: {}, Part 2: {}\"", 
+        println!("Error! Expected answer\n\"Part 1: {}, Part 2: {}\", but got\n\"Part 1: {}, Part 2: {}\"\x07", 
                  example_expected.0, example_expected.1,
                  example_actual.0, example_actual.1);
         
@@ -21,6 +21,8 @@ pub fn run_with_test<TData, TDay: Day<TData>>(day: &TDay, example_file: &str, ex
     
     println!("Example Successful! Moving to full dataset:");
     let _ = run(day, full_file)?;
+    
+    print!("\x07");
     
     Ok(())
 }

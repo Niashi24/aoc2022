@@ -377,9 +377,9 @@ mod part_2 {
     }
 }
 
-mod part_1 {
-    use crate::day16::ValveInfo;
-    
+
+    mod part_1 {
+        use crate::day16::ValveInfo;
     pub struct State {
         location: u8,       // current valve location
         time: u8,           // time of state
