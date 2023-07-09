@@ -1,5 +1,4 @@
-﻿use std::cmp::Ordering;
-use std::collections::HashSet;
+﻿use std::collections::HashSet;
 use std::ops::Add;
 use std::str::FromStr;
 use crate::day::Day;
@@ -66,7 +65,7 @@ impl Day<Info> for Day18 {
         }
     }
 
-    fn part_1(&self, data: &Info) -> usize {
+    fn part_1(&self, data: &Info) -> i64 {
         let point_set: HashSet<Point> = HashSet::from_iter(data.points.clone().into_iter());
         
         let mut sum = 0;
@@ -82,7 +81,7 @@ impl Day<Info> for Day18 {
         sum
     }
 
-    fn part_2(&self, data: &Info) -> usize {
+    fn part_2(&self, data: &Info) -> i64 {
         let solid_set: HashSet<Point> = HashSet::from_iter(data.points.clone().into_iter());
         
         #[inline]

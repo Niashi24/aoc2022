@@ -9,13 +9,13 @@ impl Day<ValveInfo> for Day16 {
         parse::create_valve_info(file_content)
     }
 
-    fn part_1(&self, data: &ValveInfo) -> usize {
-        part_1::part_1(part_1::State::new(), data) as usize
+    fn part_1(&self, data: &ValveInfo) -> i64 {
+        part_1::part_1(part_1::State::new(), data) as i64
     }
 
-    fn part_2(&self, data: &ValveInfo) -> usize {
+    fn part_2(&self, data: &ValveInfo) -> i64 {
         let mut best_with_valves = HashMap::new();
-        part_2::part_2(part_2::State::new(), data, &mut best_with_valves) as usize
+        part_2::part_2(part_2::State::new(), data, &mut best_with_valves) as i64
     }
 }
 

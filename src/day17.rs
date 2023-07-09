@@ -1,5 +1,4 @@
 ﻿use std::collections::HashSet;
-use cgmath::num_traits::real::Real;
 use cgmath::Vector2;
 use crate::day17::Jet::{Left, Right};
 use crate::day17::Rock::{IHor, IVert, L, O, X};
@@ -82,7 +81,7 @@ impl Day<Info> for Day17 {
         }
     }
 
-    fn part_1(&self, data: &Info) -> usize {
+    fn part_1(&self, data: &Info) -> i64 {
         
         const ROCK_LIMIT: u64 = 2022;
 
@@ -132,10 +131,10 @@ impl Day<Info> for Day17 {
             }
         }
 
-        y_max as usize
+        y_max as i64
     }
 
-    fn part_2(&self, data: &Info) -> usize {
+    fn part_2(&self, data: &Info) -> i64 {
         const ROCK_LIMIT: u64 = 1000000000000;
 
         let mut blocks_set: HashSet<Vector2<u64>> = HashSet::new();
@@ -169,30 +168,30 @@ impl Day<Info> for Day17 {
                 i = 0;
 
                 cycle_num += 1;
-                let dR = rock_count - rocks_before;
-                let dY = (y_max - y_before) as u64;
+                let d_r = rock_count - rocks_before;
+                let d_y = (y_max - y_before) as u64;
 
                 if cycle_num > CYCLES_BEFORE_STABLE && !did_cycle {
 
-                    if cycle.get(0).eq(&Some(&(dY, dR))) { // Cycle established!! Skip ahead to end
+                    if cycle.get(0).eq(&Some(&(d_y, d_r))) { // Cycle established!! Skip ahead to end
                         // dbg!(&cycle);
 
-                        let (mut tR, mut tY) = (0, 0);
-                        for (dY, dR) in cycle.iter() {
-                            tY += dY;
-                            tR += dR;
+                        let (mut t_r, mut t_y) = (0, 0);
+                        for (d_y, d_r) in cycle.iter() {
+                            t_y += d_y;
+                            t_r += d_r;
                         }
                         let rocks_left = ROCK_LIMIT - rock_count;
-                        let cycles_left = rocks_left / tR;
-                        y_increase = tY * cycles_left;
-                        let r_increase = tR * cycles_left;
+                        let cycles_left = rocks_left / t_r;
+                        y_increase = t_y * cycles_left;
+                        let r_increase = t_r * cycles_left;
                         rock_count += r_increase;
                         did_cycle = true;
 
                         // println!("{} {}, {} {} {} {}", tR, tY, rocks_left, cycles_left, y_increase, r_increase);
                     }
                     else {
-                        cycle.push((dY, dR));
+                        cycle.push((d_y, d_r));
                     }
                 }
 
@@ -237,7 +236,7 @@ impl Day<Info> for Day17 {
             }
         }
 
-        (y_max + y_increase) as usize
+        (y_max + y_increase) as i64
         // 0
         // solution(data, 1000000000000)
     }
@@ -265,17 +264,4 @@ fn intersects(pos: Vector2<u64>, rock: &Rock, blocks_set: &mut HashSet<Vector2<u
     }
 
     false
-}
-
-fn print_blocks(block_set: &HashSet<Vector2<u64>>, y_max: u64) {
-    for y in (1..=y_max).rev() {
-        println!("|{}|", (0..7).map(|x| {
-            match block_set.contains(&Vector2{x, y}) {
-                true => '#',
-                false => '.'
-            }
-        }).collect::<String>());
-    }
-    println!("+-------+");
-    println!();
 }

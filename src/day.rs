@@ -3,12 +3,12 @@
 pub trait Day<TData> {
     fn parse_file(&self, file_content: String) -> TData;
     
-    fn part_1(&self, data: &TData) -> usize;
+    fn part_1(&self, data: &TData) -> i64;
     
-    fn part_2(&self, data: &TData) -> usize;
+    fn part_2(&self, data: &TData) -> i64;
 }
 
-pub fn run_with_test<TData, TDay: Day<TData>>(day: &TDay, example_file: &str, example_expected: (usize, usize), full_file: &str) -> std::io::Result<()> {
+pub fn run_with_test<TData, TDay: Day<TData>>(day: &TDay, example_file: &str, example_expected: (i64, i64), full_file: &str) -> std::io::Result<()> {
     println!("Testing with example dataset: ");
     let example_actual = run(day, example_file)?;
     if example_actual != example_expected {
@@ -27,7 +27,7 @@ pub fn run_with_test<TData, TDay: Day<TData>>(day: &TDay, example_file: &str, ex
     Ok(())
 }
 
-pub fn run<TData, TDay: Day<TData>>(day: &TDay, file_name: &str) -> std::io::Result<(usize, usize)> {
+pub fn run<TData, TDay: Day<TData>>(day: &TDay, file_name: &str) -> std::io::Result<(i64, i64)> {
     let file_content = fs::read_to_string(file_name)?;
 
     use std::time::Instant;
