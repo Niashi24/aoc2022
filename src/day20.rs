@@ -1,21 +1,20 @@
-﻿use std::fmt::Display;
-use crate::day::Day;
+﻿use crate::day::Day;
+use std::fmt::Display;
 
 pub struct Day20;
 
 pub struct Info {
-    numbers: Vec<i32>
+    numbers: Vec<i32>,
 }
 
 impl Day<Info> for Day20 {
     fn parse_file(&self, file_content: String) -> Info {
         Info {
-            numbers: file_content.lines().map(|x| x.parse().unwrap()).collect()
+            numbers: file_content.lines().map(|x| x.parse().unwrap()).collect(),
         }
     }
 
     fn part_1(&self, data: &Info) -> i64 {
-        
         let mut list: Vec<Node<i64>> = Vec::with_capacity(data.numbers.len());
         let len = data.numbers.len() as i64;
 
@@ -27,7 +26,7 @@ impl Day<Info> for Day20 {
                 right: (i + 1).rem_euclid(len) as usize,
             });
         }
-        
+
         let zero_node = list.iter().position(|x| x.value == 0).unwrap();
 
         for i in 0..list.len() {
@@ -39,7 +38,9 @@ impl Day<Info> for Day20 {
         let coord_2k = get_nth_right(&list, coord_1k, 1000);
         let coord_3k = get_nth_right(&list, coord_2k, 1000);
 
-        (list.get(coord_1k).unwrap().value + list.get(coord_2k).unwrap().value + list.get(coord_3k).unwrap().value) as i64
+        (list.get(coord_1k).unwrap().value
+            + list.get(coord_2k).unwrap().value
+            + list.get(coord_3k).unwrap().value) as i64
     }
 
     fn part_2(&self, data: &Info) -> i64 {
@@ -61,9 +62,9 @@ impl Day<Info> for Day20 {
                 right: (i + 1).rem_euclid(len_64) as usize,
             });
         }
-        
+
         let zero_node = list.iter().position(|x| x.value == 0).unwrap();
-        const NUM_MIXES: usize = 10;
+        const NUM_MIXES: usize = 2;
         print_true_linked(&true_list, &list, zero_node);
         print_linked(&list, 0);
         println!();
@@ -71,22 +72,21 @@ impl Day<Info> for Day20 {
         for m in 0..NUM_MIXES {
             for i in 0..list.len() {
                 let num = list.get(i).unwrap().value;
-                move_node(&mut list, i, num);
-                print_linked(&list, 0);
+                move_node(&mut list, i, num)
             }
             print!("{}: ", m + 1);
             print_true_linked(&true_list, &list, zero_node);
-        }        
+        }
 
         let coord_1k = get_nth_right(&list, zero_node, 1000);
         let coord_2k = get_nth_right(&list, coord_1k, 1000);
         let coord_3k = get_nth_right(&list, coord_2k, 1000);
 
         unsafe {
-            true_list.get_unchecked(coord_1k) + true_list.get_unchecked(coord_2k) + true_list.get(coord_3k).unwrap()
+            true_list.get_unchecked(coord_1k)
+                + true_list.get_unchecked(coord_2k)
+                + true_list.get_unchecked(coord_3k)
         }
-
-        // true_list.get(coord_1k).unwrap() + true_list.get(coord_2k).unwrap() + true_list.get(coord_3k).unwrap()
     }
 }
 
@@ -104,7 +104,11 @@ fn print_linked<T: Display>(list: &Vec<Node<T>>, start_node: usize) {
     println!("]");
 }
 
-fn print_true_linked<TRaw: Display, TTrue: Display>(true_list: &Vec<TTrue>, list: &Vec<Node<TRaw>>, start_node: usize) {
+fn print_true_linked<TRaw: Display, TTrue: Display>(
+    true_list: &Vec<TTrue>,
+    list: &Vec<Node<TRaw>>,
+    start_node: usize,
+) {
     print!("[");
     let s_node = list.get(start_node).unwrap();
     print!("{}", true_list.get(start_node).unwrap());
@@ -161,9 +165,17 @@ fn move_node<T>(list: &mut Vec<Node<T>>, node_index: usize, x: i64) {
 
     remove(list, node_index);
     if x > 0 {
-        insert_right(list, node_index, get_nth_right(list, node_index, x as usize));
+        insert_right(
+            list,
+            node_index,
+            get_nth_right(list, node_index, x as usize),
+        );
     } else {
-        insert_left(list, node_index, get_nth_left(list, node_index, -x as usize));
+        insert_left(
+            list,
+            node_index,
+            get_nth_left(list, node_index, -x as usize),
+        );
     }
 }
 
